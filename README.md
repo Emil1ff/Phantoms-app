@@ -1,5 +1,74 @@
 This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
 
+# Google Sign-In Full Setup (iOS + Android + Backend)
+
+Bu layihədə Google login axını aşağıdakı endpoint-ə gedir:
+- `POST /Auth/google-signin` (`src/services/auth/authService.ts`)
+
+## 1) Qoşulacaq servislər
+
+1. `Google Cloud Console` (OAuth client-lər yaratmaq üçün)
+2. `Firebase Console` (iOS `GoogleService-Info.plist` və Android `google-services.json` almaq üçün - tövsiyə olunur)
+3. `Backend API` (Google ID token verify və user session yaratmaq üçün)
+
+## 2) Google Cloud konfiqurasiyası
+
+1. Project yarat: `Google Cloud Console`.
+2. `OAuth consent screen` doldur (app adı, support email, developer contact).
+3. 3 fərqli OAuth Client yarat:
+   - `Web client` -> bu dəyər `GOOGLE_WEB_CLIENT_ID` olacaq.
+   - `iOS client` (bundle id: `com.phantoms`) -> bu dəyər `GOOGLE_IOS_CLIENT_ID` olacaq.
+   - `Android client` (package: `com.phantoms`, SHA-1 debug/release) -> Android üçün lazımdır.
+
+## 3) Firebase konfiqurasiyası (tövsiyə olunan yol)
+
+1. Eyni Google project-ə bağlı Firebase project aç.
+2. iOS app əlavə et (`com.phantoms`) və `GoogleService-Info.plist` yüklə.
+3. Android app əlavə et (`com.phantoms`) və `google-services.json` yüklə.
+4. Faylları yerləşdir:
+   - `ios/Phantoms/GoogleService-Info.plist`
+   - `android/app/google-services.json`
+
+## 4) Layihədə dəyərləri yaz
+
+`src/constants/index.ts`:
+- `GOOGLE_WEB_CLIENT_ID='xxxx.apps.googleusercontent.com'`
+- `GOOGLE_IOS_CLIENT_ID='yyyy.apps.googleusercontent.com'`
+
+## 5) iOS native addım
+
+1. Xcode ilə `ios/Phantoms.xcworkspace` aç.
+2. `GoogleService-Info.plist` faylını `Phantoms` target-ə əlavə et (`Copy items if needed` aktiv).
+3. Pod install:
+   - `cd ios`
+   - `bundle exec pod install`
+
+## 6) Android native addım
+
+Android üçün debug SHA-1 alma:
+```sh
+cd android
+./gradlew signingReport
+```
+Çıxan SHA-1-i Google/Firebase Android OAuth client-də qeyd et.
+
+## 7) Backend tələbi (`/Auth/google-signin`)
+
+Backend bu axını etməlidir:
+1. Gələn `idToken`-i Google public keys ilə verify et.
+2. `aud` claim `GOOGLE_WEB_CLIENT_ID`-ə bərabər olmalıdır.
+3. `iss`, `exp`, `email_verified` yoxla.
+4. User tap/yarat.
+5. Normal login kimi `AuthSession` qaytar:
+   - `accessToken`, `refreshToken`, `accessTokenExpiry`, `userId`, `email`, `fullName`, `roles`.
+
+## 8) Hazırkı app davranışı
+
+Login ekranı artıq bu qorumaları edir:
+- `GOOGLE_WEB_CLIENT_ID` yoxdursa crash olmur, xəbərdarlıq verir.
+- iOS-da `GOOGLE_IOS_CLIENT_ID` / plist yoxdursa crash olmur, xəbərdarlıq verir.
+- Google cancel olarsa xəta göstərmir.
+
 # Getting Started
 
 > **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
